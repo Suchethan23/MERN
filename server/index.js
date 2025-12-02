@@ -3,9 +3,11 @@ import connectDB from "./config/db.js";
 import express from "express";
 import cors from "cors";
 import User from "./Schema/userSchema.js";
-import { loginRoute } from "./api/loginControllers/loginRoute.js";
-import { signupRoute } from "./api/loginControllers/signupRoute.js";
 
+
+import authRoute from "./api/Routes/authRoute.js"
+import  portfolioroute  from "./api/Routes/portfolioRoute.js";
+import stocksRoute from "./api/Routes/stocksRoute.js"
 
 connectDB();
 
@@ -17,7 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 
 
 
-app.post("/api/signup",signupRoute);
-app.post("/api/login",loginRoute);
+app.use("/api/auth",authRoute);
+app.use("/api/portfolio",portfolioroute);
+app.use("/api/analytics", stocksRoute);
+
 
 app.listen(5000, () => console.log("Server running on port 5000"));

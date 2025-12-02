@@ -12,8 +12,11 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.20.0"
+    "mongoose": "^8.20.0",
+    "otplib": "^12.0.1",
+    "smartapi-javascript": "^1.0.27"
   }
 }

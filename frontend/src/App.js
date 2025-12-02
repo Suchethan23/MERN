@@ -1,23 +1,70 @@
-import logo from './logo.svg';
-import { Route, Routes } from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-import './App.css';
-import Login from './pages/login.js';
-import Signin from './pages/signin.js';
-import Home from './pages/homepage.js';
+import Login from "./pages/Login";
+import Register from "./pages/signin";
+import Dashboard from "./pages/Dashboard";
+import Portfolio from "./pages/Portfolio";
+import AddStock from "./pages/AddStock";
+import StockDetails from "./pages/StockDetails";
+import Analytics from "./pages/Analytics";
 
 function App() {
   return (
-    <div className="App">
+    <>
+      <Navbar />
+
       <Routes>
-        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/signin" element={<Signin />} />
+        <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/portfolio"
+          element={
+            <ProtectedRoute>
+              <Portfolio />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/add-stock"
+          element={
+            <ProtectedRoute>
+              <AddStock />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/stock/:symbol"
+          element={
+            <ProtectedRoute>
+              <StockDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
-
-
-
-    </div>
+    </>
   );
 }
 

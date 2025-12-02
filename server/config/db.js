@@ -7,8 +7,8 @@ import mongoose from "mongoose";
         console.log("connection successful");
 
     }
-    catch{
-        console.log("connection failed")
+    catch(err){
+        console.log("connection failed", err.message)
 
     }
 }
