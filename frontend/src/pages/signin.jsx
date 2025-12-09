@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect,  } from "react";
+import { useNavigate } from "react-router-dom";
 import postData from "../services/post";
 export default function Signin(){
 
     const [data, setData] = useState("");
+
+    const navigate=useNavigate();
 
     const handleChange=(e)=>{
       setData({
@@ -13,6 +16,10 @@ export default function Signin(){
 
     const submit= async()=>{
       const response=await postData(data,"signup");
+      if(response.status==200)
+      {
+        navigate("/login")
+      }
       console.log(response.status);
 
       

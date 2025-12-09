@@ -23,7 +23,15 @@ export default function Login(){
         setToken(response.data.token)
         navigate("/portfolio")
       }
-      console.log(response.status);
+     
+      else if(response.status==404)
+      {
+        alert("account not found, please create account")
+        navigate("/signup")
+      }
+
+       console.log(response.status," in login.jsx");
+      
 
       
     }

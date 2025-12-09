@@ -1,53 +1,86 @@
 import Holding from "../../Schema/HoldingsSchema.js";
+import fs from "fs";
 
+const stocks = JSON.parse(fs.readFileSync("utils/nse_final.json", "utf8"));
 
-export async function addStock(req, res) {
-    try {
-
-        const { symbol, ...rest } = req.body;
-
-        console.log(req.body, "in addstock backend")
-
-        if (!symbol) {
-            return res.status(400).json({ message: "enter a valid stock tikcer/symbol" });
-        }
-
-        const existingsymbol = await Holding.findOne({ symbol });
-
-        console.log(existingsymbol);
-
-        if (existingsymbol) {
-            return res.json({ message: "Stock is already added to your profile." });
-        }
-
-        const holding = new Holding({
-            userId: req.user._id,
-            symbol,
-            ...rest
-        });
-
-        console.log(holding);
-
-        await holding.save();
-
-        res.status(201).json({ message: "Ticker addition successfull" });
-
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-
+console.log(stocks);
+function clean(str) {
+    return str
+        .toUpperCase()
+        .replace(/limited|ltd|,|\.|&/gi, "")
+        .replace(/\s+/g, " ") // collapse double spaces
+        .trim();
 }
+export async function addStock(req, res) {
+  try {
+    let { symbol, isin, quantity, avgBuyPrice, ...rest } = req.body;
+
+    if (!symbol && !isin)
+      return res.status(400).json({ status:"failed", reason:"No symbol or ISIN provided" });
+
+    symbol = symbol?.toUpperCase();
+    // const clean = x => x?.replace(/ ltd| limited|\.|,/gi,"").trim().toUpperCase();
+
+    let stockIsin = stocks.find(s => s.isin === isin) 
+
+    if (!stockIsin) {
+      return res.status(200).json({
+        status:"failed",
+        symbol,
+        isin,
+        reason:"No mapping found"
+      });
+    }
+
+    const exists = await Holding.findOne({ symbol, userId:req.user._id });
+    if (exists) {
+      return res.status(200).json({
+        status:"skipped",
+        symbol,
+        reason:"Already exists"
+      });
+    }
+
+    const holding = new Holding({
+      userId:req.user._id,
+      symbol,
+    //   isin: stockIsin.isin,
+      quantity,
+      avgBuyPrice,
+      sector: stockIsin.sector || null,
+      ...rest
+    });
+
+    await holding.save();
+    return res.status(201).json({
+      status: "success",
+      symbol,
+      isin: stockIsin.isin
+    });
+
+  } catch (err) {
+    console.error("Error ->", err);
+    res.status(500).json({ status:"error", reason: err.message });
+  }
+}
+
 
 export async function removeStock(req, res) {
     try {
-        const { symbol } = req.body;
+        console.log(req.params.symbol)
 
-        if (!symbol) {
+        const { id } = req.params;
+        // console.log(await Holding.findOne({ symbol: req.params.symbol }))
+
+
+        if (!id) {
             return res.status(400).json({ message: "Stock symbol is required" });
         }
 
-        const removed = await Holding.findOneAndDelete({ symbol });
+        const removed = await Holding.findOneAndDelete({
+            _id: id,
+            userId: req.user._id
+        });
 
         if (!removed) {
             return res.status(404).json({ message: "Stock not found in your holdings" });
@@ -115,9 +148,9 @@ export async function updateQuantity(req, res) {
 
 export async function portfolioSummary(req, res) {
     try {
-        const user_id=req.user_id;
-        const stocks=await Holding.find({user_id});
-        console.log(stocks);
+        const user_id = req.user_id;
+        const stocks = await Holding.find({ user_id });
+        // console.log(stocks);
 
         res.json(stocks);
     }
@@ -126,3 +159,5 @@ export async function portfolioSummary(req, res) {
     }
 
 }
+
+// addStock();

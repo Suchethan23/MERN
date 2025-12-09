@@ -8,6 +8,7 @@ export default function ProtectedRoute({ children }) {
   console.log(token)
 
   if (!token) {
+    alert("login to view stocks")
     return <Navigate to="/login" replace />;
   }
 

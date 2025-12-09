@@ -21,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth",authRoute);
 app.use("/api/portfolio",portfolioroute);
+console.log("✅ Portfolio routes mounted at /api/portfolio");
 app.use("/api/analytics", stocksRoute);
 
 

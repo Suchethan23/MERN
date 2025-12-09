@@ -9,7 +9,7 @@ const postData = async (data, endpoint) => {
     return res;
   }
   catch (err) {
-    console.log("data post failed", err.response);
+    console.log("in post.jsx data post failed", err.response);
     return err.response;
   }
 }

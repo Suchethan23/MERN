@@ -29,6 +29,7 @@ export const getSmartApiSession = async () => {
 
     if (response.status) {
       sessionData = response.data;
+      console.log(sessionData,"in smart api line 32")
       console.log("🔐 Logged in — Access Token:", sessionData.access_token);
       return smart_api;
     }
