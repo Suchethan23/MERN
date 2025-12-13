@@ -1,4 +1,4 @@
-export default function OrdersCard({ name, change, portfolio }) {
+export default function OrdersCard({ name, change, invested, currentvalue }) {
   return (
     <div className="border rounded-xl p-4 shadow bg-white">
       <div className="flex justify-between items-center">
@@ -10,9 +10,9 @@ export default function OrdersCard({ name, change, portfolio }) {
       </div>
 
       <p className="mt-2 text-gray-500 text-sm">Invested</p>
-      <p className="text-xl font-bold">{portfolio}</p>
-
-      <div className="mt-3 h-10 rounded-xl bg-green-200"></div>
+      <p className="text-xl font-bold">{invested}</p>
+      <p className="mt-2 text-gray-500 text-sm">Current value</p>
+      <p className={invested < currentvalue ? "text-green-600" : "text-red-600"}>{currentvalue}</p>
     </div>
   );
 }

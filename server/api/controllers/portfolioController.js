@@ -1,9 +1,12 @@
 import Holding from "../../Schema/HoldingsSchema.js";
+
+import { getSymbolTokens } from "../../utils/getSymbolTokens.js";
+import { getSmartApiSession } from "../../utils/angleone.js";
 import fs from "fs";
 
 const stocks = JSON.parse(fs.readFileSync("utils/nse_final.json", "utf8"));
 
-console.log(stocks);
+// console.log(stocks);
 function clean(str) {
     return str
         .toUpperCase()
@@ -12,56 +15,73 @@ function clean(str) {
         .trim();
 }
 export async function addStock(req, res) {
-  try {
-    let { symbol, isin, quantity, avgBuyPrice, ...rest } = req.body;
+    try {
+        let { symbol, isin, quantity, avgBuyPrice, ...rest } = req.body;
 
-    if (!symbol && !isin)
-      return res.status(400).json({ status:"failed", reason:"No symbol or ISIN provided" });
+        if (!symbol && !isin)
+            return res.status(400).json({ status: "failed", reason: "No symbol or ISIN provided" });
 
-    symbol = symbol?.toUpperCase();
-    // const clean = x => x?.replace(/ ltd| limited|\.|,/gi,"").trim().toUpperCase();
+        symbol = symbol?.toUpperCase();
+        // const clean = x => x?.replace(/ ltd| limited|\.|,/gi,"").trim().toUpperCase();
+        let stockIsin;
+        if (!isin) {
+            stockIsin = stocks.find(s =>
 
-    let stockIsin = stocks.find(s => s.isin === isin) 
+                s.symbol === symbol
 
-    if (!stockIsin) {
-      return res.status(200).json({
-        status:"failed",
-        symbol,
-        isin,
-        reason:"No mapping found"
-      });
+            )
+            console.log(stockIsin,"in line 33 single addstock")
+        }
+        else {
+
+            stockIsin = stocks.find(s =>
+
+                s.isin === isin
+            )
+        }
+        console.log(stockIsin, "in line 28 portfolio controller")
+        console.log(isin, "in line 28 portfolio controller");
+        console.log(!stockIsin)
+        if (!stockIsin) {
+            return res.status(200).json({
+                status: "failed",
+                symbol,
+                isin,
+                reason: "No mapping found"
+            });
+        }
+
+        const exists = await Holding.findOne({ symbol, userId: req.user._id });
+        if (exists) {
+            return res.status(200).json({
+                status: "skipped",
+                symbol,
+                reason: "Already exists"
+            });
+        }
+
+        const holding = new Holding({
+            userId: req.user._id,
+            symbol,
+            isin: stockIsin.isin,
+            industry:stockIsin.industry,
+            quantity,
+            avgBuyPrice,
+            sector: stockIsin.sector || null,
+            ...rest
+        });
+
+        await holding.save();
+        return res.status(201).json({
+            status: "success",
+            symbol,
+            isin: stockIsin.isin
+        });
+
+    } catch (err) {
+        console.error("Error ->", err);
+        res.status(500).json({ status: "error", reason: err.message });
     }
-
-    const exists = await Holding.findOne({ symbol, userId:req.user._id });
-    if (exists) {
-      return res.status(200).json({
-        status:"skipped",
-        symbol,
-        reason:"Already exists"
-      });
-    }
-
-    const holding = new Holding({
-      userId:req.user._id,
-      symbol,
-    //   isin: stockIsin.isin,
-      quantity,
-      avgBuyPrice,
-      sector: stockIsin.sector || null,
-      ...rest
-    });
-
-    await holding.save();
-    return res.status(201).json({
-      status: "success",
-      symbol,
-      isin: stockIsin.isin
-    });
-
-  } catch (err) {
-    console.error("Error ->", err);
-    res.status(500).json({ status:"error", reason: err.message });
-  }
 }
 
 
@@ -146,18 +166,89 @@ export async function updateQuantity(req, res) {
     }
 }
 
+// export async function portfolioSummary(req, res) {
+//     try {
+//         const user_id = req.user_id;
+//         const stocks = await Holding.find({ user_id });
+//         // console.log(stocks);
+
+//         res.json(stocks);
+//     }
+//     catch (e) {
+//         return res.status(500).json({ error: e.message })
+//     }
+
+// }
+
 export async function portfolioSummary(req, res) {
     try {
-        const user_id = req.user_id;
-        const stocks = await Holding.find({ user_id });
-        // console.log(stocks);
+        const userId = req.user.id;
+        // assuming token auth
 
-        res.json(stocks);
-    }
-    catch (e) {
-        return res.status(500).json({ error: e.message })
-    }
+        // 1. Fetch holdings saved in DB
+        const holdings = await Holding.find({ userId });   // array of holding objects
 
+        // console.log(holdings, "in line 173 portfolio controller")
+
+        if (!holdings.length)
+            return res.json({ ok: true, holdings: [] });
+
+        // 2. Convert symbols → tokens
+        const tokensList = holdings
+            .map(h => getSymbolTokens(h.isin)?.NSE)
+            .filter(Boolean);
+
+        // console.log(tokensList, "in line 183 in portfoliocontroller")
+        const api = await getSmartApiSession();
+
+        // 3. Fetch live market data in single call
+        const marketData = await api.marketData({
+            mode: "FULL",
+            exchangeTokens: { NSE: tokensList }
+        });
+
+        // console.log(JSON.stringify(marketData, 2),"market data")
+
+        // 4. Merge holdings + Live LTP
+        const merged = holdings.map(hold => {
+            // find price data for this stock
+            // console.log(hold)
+            const tokenObj = getSymbolTokens(hold.isin);
+            // console.log(tokenObj,"in line 203 in portfolio controller");
+
+            // console.log(tokenObj.NSE, "in line 205 portfolio controller");
+
+            // console.log(marketData.data.fetched)
+            const live = marketData.data.fetched.find(i => {
+                // console.log(i.symbolToken,a, tokenObj?.NSE); 
+                //  a++;
+                return i.symbolToken === tokenObj.NSE
+            });
+
+
+            console.log(live,  "in line 206 in portfolio controller");
+
+            return {
+                symbol: hold.symbol,
+                quantity: hold.quantity,
+                avgBuyPrice: hold.avgBuyPrice,
+                isin: hold.isin,
+                sector: hold.sector,
+                industry:hold.industry,
+                token: tokenObj?.NSE,
+                ltp: live?.ltp,
+                percentChange:live?.percentChange,
+                currentValue: hold.quantity * live?.ltp,
+                profitLoss: (live?.ltp - hold.avgBuyPrice) * hold.quantity
+            };
+        });
+
+        return res.json({ ok: true, count: merged.length, portfolio: merged });
+
+    } catch (e) {
+        console.log("❌ERROR:", e.message);
+        return res.status(500).json({ error: "Failed to fetch portfolio" });
+    }
 }
 
 // addStock();

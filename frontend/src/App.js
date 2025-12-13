@@ -47,7 +47,7 @@ function App() {
         />
 
         <Route
-          path="/stock/:symbol"
+          path="/stock/:isin"
           element={
             <ProtectedRoute>
               <StockDetails />

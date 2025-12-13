@@ -6,9 +6,11 @@ const holdingSchema = new mongoose.Schema({
     ref: "User",
     required: true 
   },
-  symbol: { type: String, required: true },      // Example: "TCS", "INFY"
+  symbol: { type: String, required: true },        // Example: "TCS", "INFY"
+  isin:{type:String, required:true},
   companyName: { type: String },
-  sector: { type: String },                      // Auto-mapped later
+  sector: { type: String },  
+  industry:{type:String},          // Auto-mapped later
   quantity: { type: Number, required: true },
   avgBuyPrice: { type: Number, required: true },
   buyDate: { type: Date },

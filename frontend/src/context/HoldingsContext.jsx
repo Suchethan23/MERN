@@ -1,14 +1,18 @@
 import { createContext, useContext,useEffect,useState} from "react";
+import { useLocation } from "react-router-dom";
 import api from "../services/api";
 
 export const HoldingsContext=createContext();
 export default function HoldingsProvider({children}){
 
-    
+      const location = useLocation();
    const [holdings, setHoldings] = useState([]); 
  useEffect(() => {
-    loadHoldings();
-  }, []);
+    // 🔥 load holdings only on /portfolio page
+    if (location.pathname === "/portfolio") {
+      loadHoldings();
+    }
+  }, [location.pathname]);
   const loadHoldings = async () => {
     const token = localStorage.getItem("token");
 
@@ -16,9 +20,9 @@ export default function HoldingsProvider({children}){
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    setHoldings(res.data);
+    setHoldings(res.data.portfolio);
   };
-console.log(holdings);
+console.log(holdings, "in line 25 in holidings context");
  
 
     return(

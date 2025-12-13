@@ -5,7 +5,7 @@
 // //     const { symbolToken } = req.params;
 
 // //     const api = await getSmartApiSession();
-    
+
 // //     const ltpData = await api.ltpData(
 // //       "NSE",
 // //       req.query.symbol || "RELIANCE", // fallback symbol if not provided
@@ -44,7 +44,7 @@
 //      t.name.toLowerCase().includes(symbol))
 //   );
 
- 
+
 //   return { NSE: nse?.token || null};
 // }
 
@@ -53,7 +53,7 @@
 //     const { symbolToken } = req.params;
 // //    console.log(req.params,symbol, "in  live data req.params")
 
-  
+
 
 // //    const result = findToken(symbolToken)
 
@@ -63,7 +63,7 @@
 //     console.log("🟢 Logged in — Fetching LTP...");
 
 
-    
+
 // const tokensFound = getSymbolTokens(symbolToken);
 // console.log(tokensFound,"in stock controller");
 
@@ -105,49 +105,24 @@
 
 
 import { getSmartApiSession } from "../../utils/angleone.js";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-
-const tokens = require("../../utils/nse_final.json");
+import { getCandles } from "./historicalDataController.js";
+import { getSymbolTokens } from "../../utils/getSymbolTokens.js";
+import Holding from "../../Schema/HoldingsSchema.js";
 
 // Find token by SYMBOL or NAME
-function clean(str) {
-  return str
-    .toLowerCase()
-    .replace(/limited|ltd|,|\.|&/gi, "")
-    .replace(/\s+/g, " ") // collapse double spaces
-    .trim();
-}
-
-function getSymbolTokens(symbol) {
-  const input = clean(symbol);
-
-  const stock = tokens.find(t => {
-    const sym = clean(t.symbol);
-    const name = clean(t.name);
-
-    return sym === input || sym.includes(input) || name.includes(input);
-  });
-
-  return { 
-    NSE: stock?.token || null,
-    matched: stock?.symbol || null,
-    fullName: stock?.name || null
-  };
-}
 
 
-  
+
 
 export async function liveData(req, res) {
   try {
     const { symbolToken } = req.params; // example → "ONGC"
-    
+
     const api = await getSmartApiSession();
     console.log("🟢 Logged in — Fetching LTP...");
 
     const tokensFound = getSymbolTokens(symbolToken);
-    console.log(tokensFound,"tokens found");
+    console.log(tokensFound, "tokens found");
 
     if (!tokensFound.NSE) {
       return res.status(404).json({ error: `Symbol '${symbolToken}' token not found` });
@@ -164,6 +139,7 @@ export async function liveData(req, res) {
     return res.json({
       ok: true,
       token: tokensFound.NSE,
+      name: tokensFound.stockName,
       ltp: data?.data?.fetched?.[0]?.ltp,
       fullData: data?.data?.fetched?.[0]
     });
@@ -173,3 +149,57 @@ export async function liveData(req, res) {
     return res.status(500).json({ error: e.message });
   }
 }
+
+
+
+export async function getCandlesAPI(req, res) {
+  try {
+    const { isin, interval = "DAY" } = req.params;
+
+    const tokensFound = getSymbolTokens(isin);
+    console.log(tokensFound)
+
+    // const stock = tokens.find(s => s.isin === isin);
+    if (!tokensFound) return res.status(404).json({ error: "ISIN not mapped to token" });
+
+    const candles = await getCandles(
+      tokensFound.NSE,
+      interval
+    );
+
+    return res.json({ symbol: tokensFound.stock, isin, candles });
+
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// export async function getHoldingsCandlesHistoryAPI(req, res) {
+//   try{
+//     const userId = req.user.id;
+//   const holdings = await Holding.find({ userId });
+
+//   if (!holdings.length)
+//     return res.json({ ok: true, holdings: [] });
+
+//   // 2. Convert symbols → tokens
+//   const tokensList = holdings
+//     .map(h => getSymbolTokens(h.isin)?.NSE)
+//     .filter(Boolean);
+
+//     console.log(tokensList)
+
+//   const results = await Promise.all(tokensList.map(t =>
+//     getCandles(t, "DAY", "2023-01-01", "2024-12-31")
+
+    
+   
+//   ));
+//   console.log(results);
+//    return res.json({HolidingsOHLC:results});
+//   }
+//   catch(e){
+//     res.status(500).json({ error: e.message });
+//   }
+
+// }

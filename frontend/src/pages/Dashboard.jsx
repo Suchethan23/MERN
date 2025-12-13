@@ -36,7 +36,8 @@
 
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
-import { useContext,useEffect } from "react";
+import { useContext,useEffect,useState } from "react";
+import api from "../services/api";
 import { HoldingsContext } from "../context/HoldingsContext";
 import OrdersCard from "../components/OrdersCard";
 import ChartCard from "../components/ChartCard";
@@ -45,20 +46,33 @@ import FundCard from "../components/FundCard";
 import InvestmentReturn from "../components/InvestmentReturn";
 import Riskometer from "../components/Riskometer";
 import { Computations } from "../utils/calculatePnL";
+import { useSearchParams } from "react-router-dom";
 
 // import { useComputations } from "../utils/calculatePnL";
 
 export default function Dashboard() {
 
  const [holdings ] = useContext(HoldingsContext);
+ const [holidingsGraph,setHoldingsGraph]=useState(null);
+
  const sorted=Computations(holdings);
 
  console.log("sorted", sorted)
 
-
- useEffect(() => {
-  console.log("Dashboard updated holdings:", holdings);
-}, [holdings]);
+//   const loadData = async () => {
+//     try {
+//       const res = await api.get(`/portfolio/holdingGraph`);
+//       console.log(res, "in line 65 dashboard");
+//       setHoldingsGraph(res.data);
+//     } catch (err) {
+//       console.error("Failed to load stock data:", err);
+//       // setError("Failed to load stock data");
+//     }
+//   };
+//  useEffect(() => {
+//   loadData();
+//   console.log("Dashboard updated holdings:", holdings);
+// }, [holdings]);
   
   const chartData = [
     { name: "May", value: 3000 },
@@ -77,11 +91,11 @@ export default function Dashboard() {
 
         <div className="p-6 grid grid-cols-4 gap-6">
           {/* Top Cards */}
-          {sorted.slice(0,5).map((item )=>(<OrdersCard name={item.symbol} change={0.66} portfolio={parseInt(item.avgBuyPrice*item.quantity)}/>))}
+          {sorted.slice(0,5).map((item )=>(<OrdersCard name={item.symbol} change={item.percentChange} currentvalue={parseInt(item.currentValue)}invested={parseInt(item.avgBuyPrice*item.quantity)}/>))}
 
           {/* Big Chart */}
           <div className="col-span-3">
-            <ChartCard title="S&P 500" data={chartData} />
+            {/* <ChartCard title="S&P 500" data={chartData} /> */}
           </div>
 
           {/* Right Panel */}

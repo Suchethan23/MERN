@@ -36,6 +36,7 @@ const token = localStorage.getItem("token");
     const token = localStorage.getItem("token");
 
     for (const h of result.holdings) {
+      console.log(h);
       await axios.post("/portfolio/bulkadd", {
         companyName: h.stockName,
         isin:h.isin,

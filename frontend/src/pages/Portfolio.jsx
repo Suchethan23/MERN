@@ -10,15 +10,17 @@ export default function Portfolio() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
 
+  console.log(holdings);
+
   // Load holdings from backend
-  const loadHoldings = async () => {
-    try {
-      const res = await api.get("/portfolio/all");
-      setHoldings(res.data);
-    } catch (error) {
-      console.error("Failed to load holdings:", error.response || error.message);
-    }
-  };
+  // const loadHoldings = async () => {
+  //   try {
+  //     const res = await api.get("/portfolio/all");
+  //     setHoldings(res.data);
+  //   } catch (error) {
+  //     console.error("Failed to load holdings:", error.response || error.message);
+  //   }
+  // };
 
   // Delete stock
   const handleDelete = async (id) => {
@@ -32,9 +34,9 @@ export default function Portfolio() {
     }
   };
 
-  useEffect(() => {
-    loadHoldings();
-  }, []);
+  // useEffect(() => {
+  //   loadHoldings();
+  // }, []);
 
   return (
     <div className="p-10 w-full">
@@ -54,13 +56,15 @@ export default function Portfolio() {
           <thead>
             <tr className="text-gray-600 border-b">
               <th className="pb-3 font-medium">Symbol</th>
-              <th className="pb-3 font-medium">Sector</th>
+              <th className="pb-3 font-medium">Sector/Industry</th>
               <th className="pb-3 font-medium">Market Price</th>
-               <th className="pb-3 font-medium">Buy Price</th>
+              <th className="pb-3 font-medium">Buy Price</th>
               <th className="pb-3 font-medium">Qty</th>
-             
-              
-           
+
+
+
+
+
             </tr>
           </thead>
           <tbody>
@@ -70,7 +74,7 @@ export default function Portfolio() {
                 className="border-b last:border-none hover:bg-gray-50 transition group"
               >
                 <td className="py-3 flex items-center justify-between">
-                  <Link to={`/stock/${h.symbol}`} className="text-blue-500 hover:underline">
+                  <Link to={`/stock/${h.isin}`} className="text-blue-500 hover:underline">
                     {h.symbol}
                   </Link>
                   <FaTimes
@@ -81,11 +85,12 @@ export default function Portfolio() {
                     }}
                   />
                 </td>
-                <td className="py-3 text-gray-600">{h.sector}</td>
-                <td className="py-3 text-gray-600" ><StockDetails symbols={h.symbol}/></td>
+                <td className="py-3 text-gray-600">{h.sector}/{h.industry}</td>
+                <td className="py-3 text-gray-600" >{h.ltp}</td>
+                <td className="py-3 text-gray-700">{h.avgBuyPrice}</td>
                 <td className="py-3">{h.quantity}</td>
-                <td className="py-3 font-medium text-gray-700">₹{h.avgBuyPrice}</td>
-                
+
+
               </tr>
             ))}
           </tbody>
